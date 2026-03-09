@@ -1,49 +1,54 @@
-import simpy
+import simpy.rt
 import matplotlib.pyplot as plt
 import keyboard
-from zigbee_classes import SIM_TIME, packet_count, packet_delivered, total_delay, redraw_flag, ZigbeeNode, Channel
-from network_topology import create_topology, add_node, remove_node
+from zigbee_classes import ZigbeeNode, Channel
+from network_topology import create_topology # add_node, remove_node
 from network_draw import draw_network
+import config
+import threading
 
-def print_stats():
-    print("\n----- Simulation Stats -----")
-    print("Packets generated:", packet_count)
-    print("Packets delivered:", packet_delivered)
-    if packet_delivered > 0:
-        print("Average delay:", total_delay / packet_delivered)
+state_lock = threading.Lock()
+
+def run_simulation(env):
+    env.run()
 
 def main():
-    global redraw_flag
-    env = simpy.Environment()
-    G, node_types = create_topology()
-    channel = Channel(env)
-    nodes = []
-    for name, ntype in node_types.items():
-        nodes.append(ZigbeeNode(env, name, ntype, G, channel))
+    env = simpy.rt.RealtimeEnvironment(factor=1.0, strict=False)
+    channel = Channel(env, state_lock)
+    G, nodes_dict = create_topology(env, channel, state_lock)
+    nodes = list(nodes_dict.values())
 
     plt.ion()
-    draw_network(G)
+    with state_lock:
+        draw_network(G, True)
     plt.show()  # make sure window appears immediately
 
-    keyboard.add_hotkey('a', lambda: add_node(env, G, node_types, nodes, channel))
-    keyboard.add_hotkey('r', lambda: remove_node(G, node_types, nodes))
+    # start simulation in background thread
+    sim_thread = threading.Thread(target=run_simulation, args=(env,), daemon=True)
+    sim_thread.start()
 
-    print("Starting ZigBee Simulation")
-    print("Press 'a' to add a new end node, 'r' to remove a random end node")
+    # keyboard.add_hotkey('a', lambda: add_node(env, G, node_types, nodes, channel))
+    # keyboard.add_hotkey('r', lambda: remove_node(G, node_types, nodes))
+
+    # print("Starting ZigBee Simulation")
+    # print("Press 'a' to add a new end node, 'r' to remove a random end node")
 
     # step through the simulation manually to slow it down to near real time
     # advance one simulation unit at a time, pausing to keep GUI responsive
-    while env.now < SIM_TIME:
-        env.run(until=env.now + 1)
-        if redraw_flag:
-            draw_network(G)
-            redraw_flag = False
-        plt.pause(0.01)  # allow GUI events and redraws
+    while env.now < config.SIM_TIME or config.SIM_TIME < 0:
+        if not plt.fignum_exists(1):
+            exit()
 
-    print_stats()
-    print("\nEnergy remaining")
+        with state_lock:
+            draw_network(G)
+
+        plt.pause(0.03)
+
     for n in nodes:
         print(n.name, n.energy)
 
     # keep the script alive so the figure stays open until user closes it
     input("Simulation finished, press Enter to exit.")
+
+if __name__ == "__main__":
+    main()

@@ -2,6 +2,10 @@
 
 A project for my simulation class
 
-## Imstall package
+1. Install package
 
 > pip install -r requirements.txt
+
+2. Run simulation
+
+> python simulation.py
