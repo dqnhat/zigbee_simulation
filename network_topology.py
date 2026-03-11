@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 import random
 import config
 from zigbee_classes import ZigbeeNode, Channel
@@ -40,7 +41,12 @@ def create_topology(env, channel, lock):
     for a, b in edges:
         G.add_edge(nodes[a], nodes[b])
 
-    return G, nodes
+    pos = nx.spring_layout(G)
+
+    for u, v, data in G.edges(data=True):
+        G[u][v]["distance"] = np.linalg.norm(pos[u] - pos[v])
+
+    return G, nodes, pos
 
 # def add_node(env, G, node_types, nodes, channel):
 #     end_count = sum(1 for n in node_types.values() if n == "end")

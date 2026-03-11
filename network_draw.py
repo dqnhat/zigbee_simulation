@@ -11,12 +11,9 @@ state_colors = {
     "WAIT": "red"
 }
 
-def draw_network(G, updateLayout = False):
+def draw_network(G):
     global pos
     plt.clf()
-
-    if updateLayout:
-        pos = nx.spring_layout(G)
 
     node_colors = [
         state_colors.get(node.STATE, "gray")
