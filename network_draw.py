@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 
-pos = {}
-
 state_colors = {
     "IDLE": "lightgray",
     "SEND": "orange",
@@ -11,8 +9,7 @@ state_colors = {
     "WAIT": "red"
 }
 
-def draw_network(G):
-    global pos
+def draw_network(G, pos):
     plt.clf()
 
     node_colors = [

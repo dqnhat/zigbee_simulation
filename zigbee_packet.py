@@ -9,6 +9,8 @@ class Packet:
         self.start = time
 
         # Header
+        self.packet_id = random.randint(0, 1000000)
         self.ptype = ptype   # "RTS", "CTS", "DATA", "ACK"
         self.size = 8*100 # 100 byte as bit
+        
         # Data

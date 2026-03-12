@@ -1,7 +1,6 @@
 import simpy.rt
 import matplotlib.pyplot as plt
 import keyboard
-from zigbee_classes import ZigbeeNode, Channel
 from network_topology import create_topology # add_node, remove_node
 from network_draw import draw_network
 import config
@@ -15,12 +14,11 @@ def run_simulation(env):
 def main():
     global pos
     env = simpy.rt.RealtimeEnvironment(factor=1.0, strict=False)
-    channel = Channel(env, state_lock)
-    G, nodes_dict, pos = create_topology(env, channel, state_lock)
+    G, nodes_dict, pos = create_topology(env, state_lock)
 
     plt.ion()
     with state_lock:
-        draw_network(G)
+        draw_network(G, pos)
     plt.show()  # make sure window appears immediately
 
     # start simulation in background thread
@@ -30,16 +28,16 @@ def main():
     # step through the simulation manually to slow it down to near real time
     # advance one simulation unit at a time, pausing to keep GUI responsive
     while env.now < config.SIM_TIME or config.SIM_TIME < 0:
-        if not plt.fignum_exists(1):
-            exit()
+        # Check if figure window was closed
+        if not plt.fignum_exists(plt.gcf().number):
+            break
 
         with state_lock:
-            draw_network(G)
+            draw_network(G, pos)
 
         plt.pause(0.03)
 
-    # keep the script alive so the figure stays open until user closes it
-    input("Simulation finished, press Enter to exit.")
+    plt.close('all')
 
 if __name__ == "__main__":
     main()

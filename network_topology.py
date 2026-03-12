@@ -2,13 +2,13 @@ import networkx as nx
 import numpy as np
 import random
 import config
-from zigbee_classes import ZigbeeNode, Channel
+from zigbee_node import ZigbeeNode
 
 # -----------------------------
 # Network Topology
 # -----------------------------
 
-def create_topology(env, channel, lock):
+def create_topology(env, lock):
     G = nx.Graph()
 
     node_types = {
@@ -25,7 +25,7 @@ def create_topology(env, channel, lock):
 
     # create ZigbeeNode objects
     for name, ntype in node_types.items():
-        node = ZigbeeNode(env, name, ntype, G, channel, lock)
+        node = ZigbeeNode(env, name, ntype, G, lock)
         nodes[name] = node
         G.add_node(node)
 
@@ -47,24 +47,3 @@ def create_topology(env, channel, lock):
         G[u][v]["distance"] = np.linalg.norm(pos[u] - pos[v])
 
     return G, nodes, pos
-
-# def add_node(env, G, node_types, nodes, channel):
-#     end_count = sum(1 for n in node_types.values() if n == "end")
-#     new_name = f"End{end_count + 1}"
-#     node_types[new_name] = "end"
-#     G.add_node(new_name)
-#     G.add_edge("Router1", new_name)  # connect to Router1
-#     new_node = ZigbeeNode(env, new_name, "end", G, channel)
-#     nodes.append(new_node)
-#     print(f"Added new node: {new_name}")
-#     config.redraw_flag = True
-
-# def remove_node(G, node_types, nodes):
-#     end_nodes = [n for n in node_types if node_types[n] == "end"]
-#     if end_nodes:
-#         remove_name = random.choice(end_nodes)
-#         del node_types[remove_name]
-#         G.remove_node(remove_name)
-#         nodes[:] = [n for n in nodes if n.name != remove_name]
-#         print(f"Removed node: {remove_name}")
-#         config.redraw_flag = True
