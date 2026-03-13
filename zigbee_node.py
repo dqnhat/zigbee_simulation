@@ -139,8 +139,10 @@ class ZigbeeNode:
         self.NumberOfBackoff = 0
         backoff_time = self.CSMA_BACKOFF_DEFAULT
         while need_backoff:
-            with self.lock:
-                self.STATE = "WAIT"
+
+            if self.NumberOfBackoff > 1:
+                with self.lock:
+                    self.STATE = "WAIT"
 
             if self.NumberOfBackoff > 3:
                 with self.lock:
@@ -163,15 +165,20 @@ class ZigbeeNode:
         def send_with_delay(env, srcNode, desNode, distance, packet, delay):
             yield env.timeout(delay)
             desNode.queue.put(packet)
-            srcNode.Receive_signal_strength = srcNode.Receive_signal_strength - srcNode.NODE_SIGNAL_BROUDCAST_STRENGTH
             desNode.Receive_signal_strength = desNode.Receive_signal_strength - srcNode.transmission_strength(srcNode.NODE_SIGNAL_BROUDCAST_STRENGTH, distance)
+
+        self.Receive_signal_strength = self.Receive_signal_strength + self.NODE_SIGNAL_BROUDCAST_STRENGTH
 
         for neighbor in neighbors:
             distance = self.graph.edges[self, neighbor]["distance"]
             message_send_time = self.transmission_time(packet.size, distance)
-            self.Receive_signal_strength = self.Receive_signal_strength + self.NODE_SIGNAL_BROUDCAST_STRENGTH
             neighbor.Receive_signal_strength = neighbor.Receive_signal_strength + self.transmission_strength(self.NODE_SIGNAL_BROUDCAST_STRENGTH, distance)
             self.env.process(send_with_delay(self.env, self, neighbor, distance, packet, message_send_time))
+
+        yield self.env.timeout(self.transmission_time(packet.size, 0))
+        self.Receive_signal_strength = self.Receive_signal_strength - self.NODE_SIGNAL_BROUDCAST_STRENGTH
+        with self.lock:
+            self.STATE = "IDLE"
 
     def run(self):
         while True:

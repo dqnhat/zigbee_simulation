@@ -25,11 +25,9 @@ def main():
     sim_thread = threading.Thread(target=run_simulation, args=(env,), daemon=True)
     sim_thread.start()
 
-    # step through the simulation manually to slow it down to near real time
-    # advance one simulation unit at a time, pausing to keep GUI responsive
     while env.now < config.SIM_TIME or config.SIM_TIME < 0:
         # Check if figure window was closed
-        if not plt.fignum_exists(plt.gcf().number):
+        if not plt.fignum_exists(1):
             break
 
         with state_lock:
