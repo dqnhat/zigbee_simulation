@@ -52,7 +52,7 @@ class ZigbeeNode:
 
     processed_packets = deque(maxlen=10)
 
-    BackoffExponent = 2
+    BackoffExponent = 3
     NumberOfBackoff = 4
 
     cts_received = False
@@ -182,7 +182,7 @@ class ZigbeeNode:
 
     def run(self):
         while True:
-            yield self.env.timeout(random.randint(4, 8))
+            yield self.env.timeout(random.randint(0, 30)/1000)
 
             if self.ntype == "end":
                 end_nodes = [
@@ -192,13 +192,6 @@ class ZigbeeNode:
 
                 if end_nodes:
                     dst = random.choice(end_nodes)
-
-                    # wait until channel is free
-                    while self.busy:
-                        with self.lock:
-                            self.STATE = "WAIT"
-                        yield self.env.timeout(1)
-
                     packet = Packet(self.name, dst.name, self.env.now)
                     print()
                     print(self.env.now, self.name, "send packet to", dst.name)
@@ -217,11 +210,14 @@ class ZigbeeNode:
 
             if packet.dst == self.name:
                 print(self.env.now, self.name, "received packet from", packet.src)
-            else:
-                print(self.env.now, self.name, "forward packet from", packet.src, "to", packet.dst)
                 with self.lock:
-                    self.STATE = "TRANSMISS"
-                self.env.process(self.send(packet))
+                    self.STATE = "RECEIVE"
+            else:
+                if self.ntype != "end":
+                    print(self.env.now, self.name, "forward packet from", packet.src, "to", packet.dst)
+                    with self.lock:
+                        self.STATE = "TRANSMISS"
+                    self.env.process(self.send(packet))
 
     def __hash__(self):
         return hash(self.name)

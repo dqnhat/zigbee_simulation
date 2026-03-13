@@ -13,7 +13,7 @@ def run_simulation(env):
 
 def main():
     global pos
-    env = simpy.rt.RealtimeEnvironment(factor=1.0, strict=False)
+    env = simpy.rt.RealtimeEnvironment(factor=1000, strict=False)
     G, nodes_dict, pos = create_topology(env, state_lock)
 
     plt.ion()
